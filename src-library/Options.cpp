@@ -17,6 +17,7 @@
 #include <cctype>
 #include <iostream>
 #include <algorithm>
+#include <string>
 
 using namespace std;
 
@@ -342,7 +343,7 @@ const vector<string>& Options::argv(void) const {
 
 int Options::define(const string& aDefinition) {
    Option_register* definitionEntry = NULL;
-
+   
    // Error if definition string doesn't contain an equals sign
    auto location = aDefinition.find("=");
    if (location == string::npos) {
