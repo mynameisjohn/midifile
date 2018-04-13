@@ -16,8 +16,6 @@
 #include "MidiEvent.h"
 #include <vector>
 
-using namespace std;
-
 class MidiEventList {
    public:
                   MidiEventList    (void);
@@ -51,8 +49,13 @@ class MidiEventList {
 
       MidiEventList& operator=(MidiEventList other);
 
+	  inline std::vector<MidiEvent *>::iterator begin() { return list.begin(); }
+	  inline std::vector<MidiEvent *>::iterator end() { return list.end(); }
+	  inline std::vector<MidiEvent *>::const_iterator begin() const { return list.cbegin(); }
+	  inline std::vector<MidiEvent *>::const_iterator end() const { return list.cend(); }
+
    private:
-      vector<MidiEvent*>     list;
+      std::vector<MidiEvent*>     list;
 
 };
 
