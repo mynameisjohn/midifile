@@ -18,6 +18,9 @@
 
 class MidiEventList {
    public:
+	using Iter = std::vector<MidiEvent *>::iterator;
+	using IterC = std::vector<MidiEvent *>::const_iterator;
+
                   MidiEventList    (void);
 
                  ~MidiEventList    ();
@@ -49,10 +52,11 @@ class MidiEventList {
 
       MidiEventList& operator=(MidiEventList other);
 
-	  inline std::vector<MidiEvent *>::iterator begin() { return list.begin(); }
-	  inline std::vector<MidiEvent *>::iterator end() { return list.end(); }
-	  inline std::vector<MidiEvent *>::const_iterator begin() const { return list.cbegin(); }
-	  inline std::vector<MidiEvent *>::const_iterator end() const { return list.cend(); }
+	  inline Iter begin() { return list.begin(); }
+	  inline Iter end() { return list.end(); }
+	  inline IterC begin() const { return list.cbegin(); }
+	  inline IterC end() const { return list.cend(); }
+	  inline bool empty() const { return list.empty(); }
 
    private:
       std::vector<MidiEvent*>     list;

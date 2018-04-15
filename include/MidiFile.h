@@ -39,15 +39,19 @@
 #define TRACK_STATE_SPLIT      0
 #define TRACK_STATE_JOINED     1
 
-class _TickTime {
-   public:
-      int    tick;
-      double seconds;
-};
 
 
 class MidiFile {
+	class _TickTime
+	{
+	public:
+		int    tick;
+		double seconds;
+	};
    public:
+	   using Iter = std::vector<MidiEventList *>::iterator;
+	   using IterC = std::vector<MidiEventList *>::const_iterator;
+
                 MidiFile                  (void);
                 MidiFile                  (const char* aFile);
                 MidiFile                  (const std::string& aFile);
@@ -55,6 +59,9 @@ class MidiFile {
                 MidiFile                  (const MidiFile& other);
                 MidiFile                  (MidiFile&& other);
                ~MidiFile                  ();
+
+			   MidiFile& operator=( const MidiFile& other );
+			   MidiFile& operator=( MidiFile&& other );
 
       // reading/writing functions:
       int       read                      (const char* aFile);
@@ -81,10 +88,11 @@ class MidiFile {
       int       getNumTracks              (void) const;
       int       size                      (void) const;
 
-	  std::vector<MidiEventList *>::iterator begin() { return events.begin(); }
-	  std::vector<MidiEventList *>::iterator end() { return events.end(); }
-	  std::vector<MidiEventList *>::const_iterator begin() const { return events.cbegin(); }
-	  std::vector<MidiEventList *>::const_iterator end() const { return events.cend(); }
+	  Iter begin() { return events.begin(); }
+	  Iter end() { return events.end(); }
+	  IterC begin() const { return events.cbegin(); }
+	  IterC end() const { return events.cend(); }
+	  bool empty() const { return events.size() == 1 && events.front()->empty(); }
 
       // join/split track functionality:
       void      markSequence              (void);
@@ -121,7 +129,7 @@ class MidiFile {
 
       // ticks-per-quarter related functions:
       void      setMillisecondTicks       (void);
-      int       getTicksPerQuarterNote    (void);
+      int       getTicksPerQuarterNote    (void) const;
       int       getTPQ                    (void);
       void      setTicksPerQuarterNote    (int ticks);
       void      setTPQ                    (int ticks);
@@ -199,8 +207,6 @@ class MidiFile {
       void      clear_no_deallocate       (void);
       MidiEvent&  getEvent                (int aTrack, int anIndex);
 
-      MidiFile& operator=(MidiFile other);
-
       // static functions:
       static uchar    readByte                (std::istream& input);
       static ushort   readLittleEndian2Bytes  (std::istream& input);
@@ -229,6 +235,9 @@ class MidiFile {
       int               timemapvalid;
 	  std::vector<_TickTime> timemap;
       int               rwstatus;                // read/write success flag
+
+	  // Cache if we've linked event pairs
+	  bool m_bEventPairsLinked;
 
    private:
       int        extractMidiData  ( std::istream& inputfile, std::vector<uchar>& array,
