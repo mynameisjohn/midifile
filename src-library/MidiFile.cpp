@@ -47,7 +47,8 @@ using namespace std;
 // MidiFile::MidiFile -- Constuctor.
 //
 
-MidiFile::MidiFile(void) {
+MidiFile::MidiFile( void ) :
+	m_bEventPairsLinked( false ) {
    ticksPerQuarterNote = 120;            // TPQ time base of file
    trackCount = 1;                       // # of tracks in file
    theTrackState = TRACK_STATE_SPLIT;    // joined or split
@@ -62,7 +63,9 @@ MidiFile::MidiFile(void) {
 }
 
 
-MidiFile::MidiFile(const char* filename) {
+MidiFile::MidiFile(const char* filename) :
+	m_bEventPairsLinked( false )
+{
    ticksPerQuarterNote = 120;            // TPQ time base of file
    trackCount = 1;                       // # of tracks in file
    theTrackState = TRACK_STATE_SPLIT;    // joined or split
@@ -78,7 +81,9 @@ MidiFile::MidiFile(const char* filename) {
 }
 
 
-MidiFile::MidiFile(const string& filename) {
+MidiFile::MidiFile(const string& filename) :
+	m_bEventPairsLinked( false )
+{
    ticksPerQuarterNote = 120;            // TQP time base of file
    trackCount = 1;                       // # of tracks in file
    theTrackState = TRACK_STATE_SPLIT;    // joined or split
@@ -94,7 +99,9 @@ MidiFile::MidiFile(const string& filename) {
 }
 
 
-MidiFile::MidiFile(istream& input) {
+MidiFile::MidiFile(istream& input) :
+	m_bEventPairsLinked( false )
+{
    ticksPerQuarterNote = 120;            // TQP time base of file
    trackCount = 1;                       // # of tracks in file
    theTrackState = TRACK_STATE_SPLIT;    // joined or split
@@ -117,22 +124,64 @@ MidiFile::MidiFile(istream& input) {
 //
 
 MidiFile::MidiFile(const MidiFile& other) {
-   events.reserve(other.events.size());
-   auto it = other.events.begin();
-   std::generate_n(std::back_inserter(events), other.events.size(),
-         [&]() -> MidiEventList* {
-      return new MidiEventList(**it++);
-   });
+	*this = other;
+}
 
-   ticksPerQuarterNote = other.ticksPerQuarterNote;
-   trackCount = other.trackCount;
-   theTrackState = other.theTrackState;
-   theTimeState = other.theTimeState;
-   readFileName = other.readFileName;
 
-   timemapvalid = other.timemapvalid;
-   timemap = other.timemap;
-   rwstatus = other.rwstatus;
+
+
+//////////////////////////////
+//
+// MidiFile::operator=(MidiFile) -- Assignment.
+//
+
+MidiFile& MidiFile::operator=( const MidiFile& other )
+{
+	// This doesn't preserve linked pairs, so do that afterward
+	events.reserve( other.events.size() );
+	auto it = other.events.begin();
+	std::generate_n( std::back_inserter( events ), other.events.size(),
+					 [&] () -> MidiEventList*
+	{
+		return new MidiEventList( **it++ );
+	} );
+
+	ticksPerQuarterNote = other.ticksPerQuarterNote;
+	trackCount = other.trackCount;
+	theTrackState = other.theTrackState;
+	theTimeState = other.theTimeState;
+	readFileName = other.readFileName;
+
+	timemapvalid = other.timemapvalid;
+	timemap = other.timemap;
+	rwstatus = other.rwstatus;
+
+	if ( other.m_bEventPairsLinked )
+		linkEventPairs();
+
+	return *this;
+}
+
+
+MidiFile& MidiFile::operator=( MidiFile&& other )
+{
+	// I think moving the pointer vec preserves links
+	events = std::move( other.events );
+	m_bEventPairsLinked = other.m_bEventPairsLinked;
+	other.m_bEventPairsLinked = false;
+	other.events.clear();
+	other.events.push_back( new MidiEventList );
+
+	ticksPerQuarterNote = other.ticksPerQuarterNote;
+	trackCount = other.trackCount;
+	theTrackState = other.theTrackState;
+	theTimeState = other.theTimeState;
+	readFileName = other.readFileName;
+
+	timemapvalid = other.timemapvalid;
+	timemap = other.timemap;
+	rwstatus = other.rwstatus;
+	return *this;
 }
 
 
@@ -143,19 +192,7 @@ MidiFile::MidiFile(const MidiFile& other) {
 //
 
 MidiFile::MidiFile(MidiFile&& other) {
-    events = std::move(other.events);
-    other.events.clear();
-    other.events.push_back(new MidiEventList);
-
-   ticksPerQuarterNote = other.ticksPerQuarterNote;
-   trackCount = other.trackCount;
-   theTrackState = other.theTrackState;
-   theTimeState = other.theTimeState;
-   readFileName = other.readFileName;
-
-   timemapvalid = other.timemapvalid;
-   timemap = other.timemap;
-   rwstatus = other.rwstatus;
+	*this = std::move( other );
 }
 
 
@@ -1878,7 +1915,7 @@ MidiEvent& MidiFile::getEvent(int aTrack, int anIndex) {
 //   time units that are supposed to occur during a quarternote.
 //
 
-int MidiFile::getTicksPerQuarterNote(void) {
+int MidiFile::getTicksPerQuarterNote(void) const {
    if (ticksPerQuarterNote == 0xE728) {
       // this is a special case which is the SMPTE time code
       // setting for 25 frames a second with 40 subframes
@@ -2231,6 +2268,7 @@ int MidiFile::linkNotePairs(void) {
       }
       sum += events[i]->linkNotePairs();
    }
+   m_bEventPairsLinked = true;
    return sum;
 }
 
@@ -2252,6 +2290,7 @@ void MidiFile::clearLinks(void) {
       }
       events[i]->clearLinks();
    }
+   m_bEventPairsLinked = false;
 }
 
 
@@ -3098,16 +3137,3 @@ ostream& MidiFile::writeLittleEndianDouble(ostream& out, double value) {
    out << data.bytes[7];
    return out;
 }
-
-
-
-//////////////////////////////
-//
-// MidiFile::operator=(MidiFile) -- Assignment.
-//
-
-MidiFile& MidiFile::operator=(MidiFile other) {
-   events.swap(other.events);
-   return *this;
-}
-
