@@ -40,6 +40,7 @@
 #include <iterator>
 
 using namespace std;
+using namespace mifi;
 
 
 //////////////////////////////
@@ -2771,7 +2772,7 @@ void MidiFile::clear_no_deallocate(void) {
 //    (5) note-ons come after all other regular MIDI messages.
 //
 
-int eventcompare(const void* a, const void* b) {
+int mifi::eventcompare(const void* a, const void* b) {
    MidiEvent& aevent = **((MidiEvent**)a);
    MidiEvent& bevent = **((MidiEvent**)b);
 
@@ -2829,7 +2830,7 @@ int eventcompare(const void* a, const void* b) {
 // operator<< -- for printing an ASCII version of the MIDI file
 //
 
-ostream& operator<<(ostream& out, MidiFile& aMidiFile) {
+ostream& mifi::operator<<(ostream& out, MidiFile& aMidiFile) {
    aMidiFile.writeBinascWithComments(out);
    return out;
 }

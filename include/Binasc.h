@@ -18,11 +18,13 @@
 
 using namespace std;
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned long ulong;
+class Binasc 
+{
 
-class Binasc {
+	typedef unsigned char uchar;
+	typedef unsigned short ushort;
+	typedef unsigned long ulong;
+
    public:
                Binasc         (void);
               ~Binasc         ();

@@ -20,6 +20,7 @@
 #include <utility>
 
 using namespace std;
+using namespace mifi;
 
 
 //////////////////////////////

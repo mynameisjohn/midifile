@@ -18,6 +18,7 @@
 #include <iterator>
 
 using namespace std;
+using namespace mifi;
 
 
 //////////////////////////////

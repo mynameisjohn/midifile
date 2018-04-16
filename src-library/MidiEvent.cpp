@@ -15,7 +15,7 @@
 #include <stdlib.h>
 
 using namespace std;
-
+using namespace mifi;
 
 //////////////////////////////
 //
