@@ -138,14 +138,15 @@ MidiFile::MidiFile(const MidiFile& other) {
 
 MidiFile& MidiFile::operator=( const MidiFile& other )
 {
+    if (this == &other)
+        return *this;
+
 	// This doesn't preserve linked pairs, so do that afterward
-	events.reserve( other.events.size() );
-	auto it = other.events.begin();
-	std::generate_n( std::back_inserter( events ), other.events.size(),
-					 [&] () -> MidiEventList*
-	{
-		return new MidiEventList( **it++ );
-	} );
+    for (MidiEventList* eventList : events)
+        delete eventList;
+    events.clear ();
+    for (MidiEventList* eventList : other.events)
+        events.push_back(new MidiEventList(*eventList));
 
 	ticksPerQuarterNote = other.ticksPerQuarterNote;
 	trackCount = other.trackCount;
