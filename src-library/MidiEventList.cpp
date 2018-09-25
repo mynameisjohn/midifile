@@ -40,11 +40,7 @@ MidiEventList::MidiEventList(void) {
 //
 
 MidiEventList::MidiEventList(const MidiEventList& other) {
-   list.reserve(other.list.size());
-   auto it = other.list.begin();
-   std::generate_n(std::back_inserter(list), other.list.size(), [&]() -> MidiEvent* {
-      return new MidiEvent(**it++);
-   });
+    *this = other;
 }
 
 
@@ -55,8 +51,7 @@ MidiEventList::MidiEventList(const MidiEventList& other) {
 //
 
 MidiEventList::MidiEventList(MidiEventList&& other) {
-    list = std::move(other.list);
-    other.list.clear();
+    *this = std::move(other);
 }
 
 
@@ -401,9 +396,21 @@ int MidiEventList::push_back_no_copy(MidiEvent* event) {
 // MidiEventList::operator=(MidiEventList) -- Assignment.
 //
 
-MidiEventList& MidiEventList::operator=(MidiEventList other) {
-   list.swap(other.list);
+MidiEventList& MidiEventList::operator=(const MidiEventList& other) {
+    for (MidiEvent* pEvt : list)
+        delete pEvt;
+    list.clear();
+    for (MidiEvent* pEvt : other.list)
+        list.push_back(new MidiEvent(*pEvt));
    return *this;
+}
+
+MidiEventList& MidiEventList::operator=(MidiEventList&& other)
+{
+    for (MidiEvent* pEvt : list)
+        delete pEvt;
+    list = std::move(other.list);
+    return *this;
 }
 
 

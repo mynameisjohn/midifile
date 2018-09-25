@@ -53,7 +53,8 @@ namespace mifi
 		void        detach              ( void );
 		int         push_back_no_copy   ( MidiEvent* event );
 
-		MidiEventList& operator=( MidiEventList other );
+		MidiEventList& operator=( const MidiEventList& other );
+        MidiEventList& operator=(MidiEventList&& other);
 
 		inline Iter begin() { return list.begin(); }
 		inline Iter end() { return list.end(); }
