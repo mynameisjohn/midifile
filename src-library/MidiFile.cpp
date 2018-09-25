@@ -55,7 +55,7 @@ MidiFile::MidiFile( void ) :
    theTrackState = TRACK_STATE_SPLIT;    // joined or split
    theTimeState = TIME_STATE_ABSOLUTE;   // absolute or delta
    events.resize(1);
-   events[0] = new MidiEventList;
+   // events[0] = new MidiEventList;
    readFileName.resize(1);
    readFileName[0] = '\0';
    timemap.clear();
@@ -72,7 +72,7 @@ MidiFile::MidiFile(const char* filename) :
    theTrackState = TRACK_STATE_SPLIT;    // joined or split
    theTimeState = TIME_STATE_ABSOLUTE;   // absolute or delta
    events.resize(1);
-   events[0] = new MidiEventList;
+   // events[0] = new MidiEventList;
    readFileName.resize(1);
    readFileName[0] = '\0';
    read(filename);
@@ -90,7 +90,7 @@ MidiFile::MidiFile(const string& filename) :
    theTrackState = TRACK_STATE_SPLIT;    // joined or split
    theTimeState = TIME_STATE_ABSOLUTE;   // absolute or delta
    events.resize(1);
-   events[0] = new MidiEventList;
+   // events[0] = new MidiEventList;
    readFileName.resize(1);
    readFileName[0] = '\0';
    read(filename);
@@ -108,7 +108,7 @@ MidiFile::MidiFile(istream& input) :
    theTrackState = TRACK_STATE_SPLIT;    // joined or split
    theTimeState = TIME_STATE_ABSOLUTE;   // absolute or delta
    events.resize(1);
-   events[0] = new MidiEventList;
+   // events[0] = new MidiEventList;
    readFileName.resize(1);
    readFileName[0] = '\0';
    read(input);
@@ -142,11 +142,12 @@ MidiFile& MidiFile::operator=( const MidiFile& other )
         return *this;
 
 	// This doesn't preserve linked pairs, so do that afterward
-    for (MidiEventList* eventList : events)
-        delete eventList;
-    events.clear ();
-    for (MidiEventList* eventList : other.events)
-        events.push_back(new MidiEventList(*eventList));
+    //for (MidiEventList* eventList : events)
+    //    delete eventList;
+    //events.clear 
+    //for (MidiEventList* eventList : other.events)
+    //    events.push_back(new MidiEventList(*eventList));
+    events = other.events;
 
 	ticksPerQuarterNote = other.ticksPerQuarterNote;
 	trackCount = other.trackCount;
@@ -167,15 +168,15 @@ MidiFile& MidiFile::operator=( const MidiFile& other )
 
 MidiFile& MidiFile::operator=( MidiFile&& other )
 {
-    for (MidiEventList* eventList : events)
-        delete eventList;
-    events.clear ();
+    // for (MidiEventList* eventList : events)
+    //     delete eventList;
+    // events.clear ();
 	// I think moving the pointer vec preserves links
 	events = std::move( other.events );
 	m_bEventPairsLinked = other.m_bEventPairsLinked;
 	other.m_bEventPairsLinked = false;
 	other.events.clear();
-	other.events.push_back( new MidiEventList );
+    other.events.resize(1);// (new MidiEventList);
 
 	ticksPerQuarterNote = other.ticksPerQuarterNote;
 	trackCount = other.trackCount;
@@ -211,10 +212,10 @@ MidiFile::~MidiFile() {
    readFileName.resize(1);
    readFileName[0] = '\0';
    clear();
-   if (events[0] != NULL) {
-      delete events[0];
-      events[0] = NULL;
-   }
+   //if (events[0] != NULL) {
+   //   delete events[0];
+   //   events[0] = NULL;
+   //}
    events.resize(0);
    rwstatus = 0;
    timemap.clear();
@@ -395,14 +396,16 @@ int MidiFile::read(istream& input) {
       tracks = shortdata;
    }
    clear();
-   if (events[0] != NULL) {
-      delete events[0];
-   }
+   //if (events[0] != NULL) {
+   //   delete events[0];
+   //}
    events.resize(tracks);
    for (int z=0; z<tracks; z++) {
-      events[z] = new MidiEventList;
-      events[z]->reserve(10000);   // Initialize with 10,000 event storage.
-      events[z]->clear();
+      // events[z] = new MidiEventList;
+      // events[z]->reserve(10000);   // Initialize with 10,000 event storage.
+      // events[z]->clear();
+       events[z].reserve(10000);
+       events[z].clear();
    }
 
    // Header parameter #3: Ticks per quarter note
@@ -510,8 +513,8 @@ int MidiFile::read(istream& input) {
 
       // set the size of the track allocation so that it might
       // approximately fit the data.
-      events[i]->reserve((int)longdata/2);
-      events[i]->clear();
+      events[i].reserve((int)longdata/2);
+      events[i].clear();
 
       // process the track
       absticks = 0;
@@ -541,7 +544,7 @@ int MidiFile::read(istream& input) {
             // and added automatically when a MIDI is written.
             event.tick = absticks;
             event.track = i;
-            events[i]->push_back(event);
+            events[i].push_back(event);
 
             break;
          }
@@ -549,11 +552,11 @@ int MidiFile::read(istream& input) {
          if (bytes[0] != 0xff && bytes[0] != 0xf0) {
             event.tick = absticks;
             event.track = i;
-            events[i]->push_back(event);
+            events[i].push_back(event);
          } else {
             event.tick = absticks;
             event.track = i;
-            events[i]->push_back(event);
+            events[i].push_back(event);
          }
 
       }
@@ -634,15 +637,15 @@ int MidiFile::write(ostream& out) {
       trackdata.reserve(123456);   // make the track data larger than
                                    // expected data input
       trackdata.clear();
-      for (j=0; j<(int)events[i]->size(); j++) {
-         if ((*events[i])[j].isEndOfTrack()) {
+      for (j=0; j<(int)events[i].size(); j++) {
+         if ((events[i])[j].isEndOfTrack()) {
             // suppress end-of-track meta messages (one will be added
             // automatically after all track data has been written).
             continue;
          }
-         writeVLValue((*events[i])[j].tick, trackdata);
-         if (((*events[i])[j].getCommandByte() == 0xf0) ||
-             ((*events[i])[j].getCommandByte() == 0xf7)) {
+         writeVLValue((events[i])[j].tick, trackdata);
+         if (((events[i])[j].getCommandByte() == 0xf0) ||
+             ((events[i])[j].getCommandByte() == 0xf7)) {
             // 0xf0 == Complete sysex message (0xf0 is part of the raw MIDI).
             // 0xf7 == Raw byte message (0xf7 not part of the raw MIDI).
             // Print the first byte of the message (0xf0 or 0xf7), then
@@ -650,16 +653,16 @@ int MidiFile::write(ostream& out) {
             // In other words, when creating a 0xf0 or 0xf7 MIDI message,
             // do not insert the VLV byte length yourself, as this code will
             // do it for you automatically.
-            trackdata.push_back((*events[i])[j][0]); // 0xf0 or 0xf7;
-            writeVLValue((*events[i])[j].size()-1, trackdata);
-            for (k=1; k<(int)(*events[i])[j].size(); k++) {
-               trackdata.push_back((*events[i])[j][k]);
+            trackdata.push_back((events[i])[j][0]); // 0xf0 or 0xf7;
+            writeVLValue((events[i])[j].size()-1, trackdata);
+            for (k=1; k<(int)(events[i])[j].size(); k++) {
+               trackdata.push_back((events[i])[j][k]);
             }
          } else {
             // non-sysex type of message, so just output the
             // bytes of the message:
-            for (k=0; k<(int)(*events[i])[j].size(); k++) {
-               trackdata.push_back((*events[i])[j][k]);
+            for (k=0; k<(int)(events[i])[j].size(); k++) {
+               trackdata.push_back((events[i])[j][k]);
             }
          }
       }
@@ -858,11 +861,11 @@ int MidiFile::status(void) {
 //
 
 MidiEventList& MidiFile::operator[](int aTrack) {
-   return *events[aTrack];
+   return events[aTrack];
 }
 
 const MidiEventList& MidiFile::operator[](int aTrack) const {
-   return *events[aTrack];
+   return events[aTrack];
 }
 
 
@@ -910,8 +913,8 @@ int MidiFile::size(void) const {
 void MidiFile::markSequence(void) {
    int sequence = 1;
    for (int i=0; i<size(); i++) {
-      for (int j=0; j<events[i]->size(); j++) {
-         (*events[i])[j].seq = sequence++;
+      for (int j=0; j<events[i].size(); j++) {
+         (events[i])[j].seq = sequence++;
       }
    }
 }
@@ -928,8 +931,8 @@ void MidiFile::markSequence(void) {
 
 void MidiFile::clearSequence(void) {
    for (int i=0; i<size(); i++) {
-      for (int j=0; j<events[i]->size(); j++) {
-         (*events[i])[j].seq = 0;
+      for (int j=0; j<events[i].size(); j++) {
+         (events[i])[j].seq = 0;
       }
    }
 }
@@ -956,32 +959,29 @@ void MidiFile::joinTracks(void) {
       return;
    }
 
-   MidiEventList* joinedTrack;
-   joinedTrack = new MidiEventList;
+   MidiEventList joinedTrack;
 
    int messagesum = 0;
    int length = getNumTracks();
    int i, j;
    for (i=0; i<length; i++) {
-      messagesum += (*events[i]).size();
+      messagesum += (events[i]).size();
    }
-   joinedTrack->reserve((int)(messagesum + 32 + messagesum * 0.1));
+   joinedTrack.reserve((int)(messagesum + 32 + messagesum * 0.1));
 
    int oldTimeState = getTickState();
    if (oldTimeState == TIME_STATE_DELTA) {
       absoluteTicks();
    }
    for (i=0; i<length; i++) {
-      for (j=0; j<(int)events[i]->size(); j++) {
-         joinedTrack->push_back_no_copy(&(*events[i])[j]);
+      for (j=0; j<(int)events[i].size(); j++) {
+          joinedTrack.push_back_no_copy(&(events[i])[j]);
       }
    }
 
    clear_no_deallocate();
 
-   delete events[0];
-   events.resize(0);
-   events.push_back(joinedTrack);
+   events = { joinedTrack };
    sortTracks();
    if (oldTimeState == TIME_STATE_DELTA) {
       deltaTicks();
@@ -1009,10 +1009,10 @@ void MidiFile::splitTracks(void) {
 
    int maxTrack = 0;
    int i;
-   int length = events[0]->size();
+   int length = events[0].size();
    for (i=0; i<length; i++) {
-      if ((*events[0])[i].track > maxTrack) {
-          maxTrack = (*events[0])[i].track;
+      if ((events[0])[i].track > maxTrack) {
+          maxTrack = (events[0])[i].track;
       }
    }
    int trackCount = maxTrack + 1;
@@ -1021,21 +1021,21 @@ void MidiFile::splitTracks(void) {
       return;
    }
 
-   MidiEventList* olddata = events[0];
-   events[0] = NULL;
+   MidiEventList olddata = events[0];
+   //events[0] = NULL;
    events.resize(trackCount);
-   for (i=0; i<trackCount; i++) {
-      events[i] = new MidiEventList;
-   }
+   //for (i=0; i<trackCount; i++) {
+   //   events[i] = new MidiEventList;
+   //}
 
    int trackValue = 0;
    for (i=0; i<length; i++) {
-      trackValue = (*olddata)[i].track;
-      events[trackValue]->push_back_no_copy(&(*olddata)[i]);
+      trackValue = (olddata)[i].track;
+      events[trackValue].push_back_no_copy(&(olddata)[i]);
    }
 
-   olddata->detach();
-   delete olddata;
+   olddata.detach();
+   // delete olddata;
 
    if (oldTimeState == TIME_STATE_DELTA) {
       deltaTicks();
@@ -1065,7 +1065,7 @@ void MidiFile::splitTracksByChannel(void) {
 
    int maxTrack = 0;
    int i;
-   MidiEventList& eventlist = *events[0];
+   MidiEventList& eventlist = events[0];
    MidiEventList* olddata = &eventlist;
    int length = eventlist.size();
    for (i=0; i<length; i++) {
@@ -1087,11 +1087,11 @@ void MidiFile::splitTracksByChannel(void) {
       return;
    }
 
-   events[0] = NULL;
+   //events[0] = NULL;
    events.resize(trackCount);
-   for (i=0; i<trackCount; i++) {
-      events[i] = new MidiEventList;
-   }
+   //for (i=0; i<trackCount; i++) {
+   //   events[i] = new MidiEventList;
+   //}
 
    int trackValue = 0;
    for (i=0; i<length; i++) {
@@ -1101,7 +1101,7 @@ void MidiFile::splitTracksByChannel(void) {
       } else if (eventlist[i].size() > 0) {
          trackValue = (eventlist[i][0] & 0x0f) + 1;
       }
-      events[trackValue]->push_back_no_copy(&eventlist[i]);
+      events[trackValue].push_back_no_copy(&eventlist[i]);
    }
 
    olddata->detach();
@@ -1207,20 +1207,20 @@ void MidiFile::deltaTicks(void) {
    int *timedata = new int[length];
    for (i=0; i<length; i++) {
       timedata[i] = 0;
-      if (events[i]->size() > 0) {
-         timedata[i] = (*events[i])[0].tick;
+      if (events[i].size() > 0) {
+         timedata[i] = (events[i])[0].tick;
       } else {
          continue;
       }
-      for (j=1; j<(int)events[i]->size(); j++) {
-         temp = (*events[i])[j].tick;
+      for (j=1; j<(int)events[i].size(); j++) {
+         temp = (events[i])[j].tick;
          int deltatick = temp - timedata[i];
          if (deltatick < 0) {
             cerr << "Error: negative delta tick value: " << deltatick << endl
                  << "Timestamps must be sorted first"
                  << " (use MidiFile::sortTracks() before writing)." << endl;
          }
-         (*events[i])[j].tick = deltatick;
+         (events[i])[j].tick = deltatick;
          timedata[i] = temp;
       }
    }
@@ -1249,14 +1249,14 @@ void MidiFile::absoluteTicks(void) {
    int* timedata = new int[length];
    for (i=0; i<length; i++) {
       timedata[i] = 0;
-      if (events[i]->size() > 0) {
-         timedata[i] = (*events[i])[0].tick;
+      if (events[i].size() > 0) {
+         timedata[i] = (events[i])[0].tick;
       } else {
          continue;
       }
-      for (j=1; j<(int)events[i]->size(); j++) {
-         timedata[i] += (*events[i])[j].tick;
-         (*events[i])[j].tick = timedata[i];
+      for (j=1; j<(int)events[i].size(); j++) {
+         timedata[i] += (events[i])[j].tick;
+         (events[i])[j].tick = timedata[i];
       }
    }
    theTimeState = TIME_STATE_ABSOLUTE;
@@ -1388,8 +1388,8 @@ int MidiFile::addEvent(int aTrack, int aTick, vector<uchar>& midiData) {
    anEvent.track = aTrack;
    anEvent.setMessage(midiData);
 
-   events[aTrack]->push_back(anEvent);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back(anEvent);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1401,11 +1401,11 @@ int MidiFile::addEvent(int aTrack, int aTick, vector<uchar>& midiData) {
 
 int MidiFile::addEvent(MidiEvent& mfevent) {
    if (getTrackState() == TRACK_STATE_JOINED) {
-      events[0]->push_back(mfevent);
-      return events[0]->size()-1;
+      events[0].push_back(mfevent);
+      return events[0].size()-1;
    } else {
-      events[mfevent.track]->push_back(mfevent);
-      return events[mfevent.track]->size()-1;
+      events[mfevent.track].push_back(mfevent);
+      return events[mfevent.track].size()-1;
    }
 }
 
@@ -1463,8 +1463,8 @@ int MidiFile::addCopyright(int aTrack, int aTick, const string& text) {
    MidiEvent* me = new MidiEvent;
    me->makeCopyright(text);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1478,8 +1478,8 @@ int MidiFile::addTrackName(int aTrack, int aTick, const string& name) {
    MidiEvent* me = new MidiEvent;
    me->makeTrackName(name);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1493,8 +1493,8 @@ int MidiFile::addInstrumentName(int aTrack, int aTick, const string& name) {
    MidiEvent* me = new MidiEvent;
    me->makeInstrumentName(name);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1508,8 +1508,8 @@ int MidiFile::addLyric(int aTrack, int aTick, const string& text) {
    MidiEvent* me = new MidiEvent;
    me->makeLyric(text);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1523,8 +1523,8 @@ int MidiFile::addMarker(int aTrack, int aTick, const string& text) {
    MidiEvent* me = new MidiEvent;
    me->makeMarker(text);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1538,8 +1538,8 @@ int MidiFile::addCue(int aTrack, int aTick, const string& text) {
    MidiEvent* me = new MidiEvent;
    me->makeCue(text);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1553,8 +1553,8 @@ int MidiFile::addTempo(int aTrack, int aTick, double aTempo) {
    MidiEvent* me = new MidiEvent;
    me->makeTempo(aTempo);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1587,8 +1587,8 @@ int MidiFile::addTimeSignature(int aTrack, int aTick, int top, int bottom,
    MidiEvent* me = new MidiEvent;
    me->makeTimeSignature(top, bottom, clocksPerClick, num32ndsPerQuarter);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1679,8 +1679,8 @@ int MidiFile::addNoteOn(int aTrack, int aTick, int aChannel, int key, int vel) {
    MidiEvent* me = new MidiEvent;
    me->makeNoteOn(aChannel, key, vel);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1695,8 +1695,8 @@ int MidiFile::addNoteOff(int aTrack, int aTick, int aChannel, int key,
    MidiEvent* me = new MidiEvent;
    me->makeNoteOff(aChannel, key, vel);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1711,8 +1711,8 @@ int MidiFile::addNoteOff(int aTrack, int aTick, int aChannel, int key) {
    MidiEvent* me = new MidiEvent;
    me->makeNoteOff(aChannel, key);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1728,8 +1728,8 @@ int MidiFile::addController(int aTrack, int aTick, int aChannel,
    MidiEvent* me = new MidiEvent;
    me->makeController(aChannel, num, value);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1745,8 +1745,8 @@ int MidiFile::addPatchChange(int aTrack, int aTick, int aChannel,
    MidiEvent* me = new MidiEvent;
    me->makePatchChange(aChannel, patchnum);
    me->tick = aTick;
-   events[aTrack]->push_back_no_copy(me);
-   return events[aTrack]->size() - 1;
+   events[aTrack].push_back_no_copy(me);
+   return events[aTrack].size() - 1;
 }
 
 
@@ -1816,9 +1816,9 @@ int MidiFile::addPitchBend(int aTrack, int aTick, int aChannel, double amount) {
 int MidiFile::addTrack(void) {
    int length = getNumTracks();
    events.resize(length+1);
-   events[length] = new MidiEventList;
-   events[length]->reserve(10000);
-   events[length]->clear();
+   //events[length] = new MidiEventList;
+   events[length].reserve(10000);
+   events[length].clear();
    return length;
 }
 
@@ -1827,9 +1827,9 @@ int MidiFile::addTrack(int count) {
    events.resize(length+count);
    int i;
    for (i=0; i<count; i++) {
-      events[length + i] = new MidiEventList;
-      events[length + i]->reserve(10000);
-      events[length + i]->clear();
+      // events[length + i] = new MidiEventList;
+      events[length + i].reserve(10000);
+      events[length + i].clear();
    }
    return length + count - 1;
 }
@@ -1842,9 +1842,9 @@ int MidiFile::addTrack(int count) {
 //
 
 void MidiFile::allocateEvents(int track, int aSize) {
-   int oldsize = events[track]->size();
+   int oldsize = events[track].size();
    if (oldsize < aSize) {
-      events[track]->reserve(aSize);
+      events[track].reserve(aSize);
    }
 }
 
@@ -1864,13 +1864,14 @@ void MidiFile::deleteTrack(int aTrack) {
    if (length == 1) {
       return;
    }
-   delete events[aTrack];
-   for (int i=aTrack; i<length-1; i++) {
-      events[i] = events[i+1];
-   }
-
-   events[length] = NULL;
-   events.resize(length-1);
+   events.erase(events.begin() + aTrack);
+   // delete events[aTrack];
+   // for (int i=aTrack; i<length-1; i++) {
+   //    events[i] = events[i+1];
+   // }
+   // 
+   // events[length] = NULL;
+   // events.resize(length-1);
 }
 
 
@@ -1882,13 +1883,13 @@ void MidiFile::deleteTrack(int aTrack) {
 //
 
 void MidiFile::clear(void) {
-   int length = getNumTracks();
-   for (int i=0; i<length; i++) {
-      delete events[i];
-      events[i] = NULL;
-   }
+   //int length = getNumTracks();
+   //for (int i=0; i<length; i++) {
+   //   delete events[i];
+   //   events[i] = NULL;
+   //}
    events.resize(1);
-   events[0] = new MidiEventList;
+   // events[0] = new MidiEventList;
    timemapvalid=0;
    timemap.clear();
    theTrackState = TRACK_STATE_SPLIT;
@@ -1909,7 +1910,7 @@ void MidiFile::erase(void) {
 //
 
 MidiEvent& MidiFile::getEvent(int aTrack, int anIndex) {
-   return (*events[aTrack])[anIndex];
+   return (events[aTrack])[anIndex];
 }
 
 
@@ -1949,12 +1950,12 @@ int MidiFile::getTPQ(void) {
 //
 
 int MidiFile::getEventCount(int aTrack) {
-   return events[aTrack]->size();
+   return events[aTrack].size();
 }
 
 
 int MidiFile::getNumEvents(int aTrack) {
-   return events[aTrack]->size();
+   return events[aTrack].size();
 }
 
 
@@ -1970,34 +1971,31 @@ int MidiFile::getNumEvents(int aTrack) {
 //
 
 void MidiFile::mergeTracks(int aTrack1, int aTrack2) {
-   MidiEventList* mergedTrack;
-   mergedTrack = new MidiEventList;
+   MidiEventList mergedTrack;
    int oldTimeState = getTickState();
    if (oldTimeState == TIME_STATE_DELTA) {
       absoluteTicks();
    }
    int i, j;
    int length = getNumTracks();
-   for (i=0; i<(int)events[aTrack1]->size(); i++) {
-      mergedTrack->push_back((*events[aTrack1])[i]);
+   for (i=0; i<(int)events[aTrack1].size(); i++) {
+      mergedTrack.push_back((events[aTrack1])[i]);
    }
-   for (j=0; j<(int)events[aTrack2]->size(); i++) {
-      (*events[aTrack2])[i].track = aTrack1;
-      mergedTrack->push_back((*events[aTrack2])[i]);
+   for (j=0; j<(int)events[aTrack2].size(); i++) {
+      (events[aTrack2])[i].track = aTrack1;
+      mergedTrack.push_back((events[aTrack2])[i]);
    }
 
-   sortTrack(*mergedTrack);
-
-   delete events[aTrack1];
+   sortTrack(mergedTrack);
 
    events[aTrack1] = mergedTrack;
+   events.erase(events.begin() + aTrack2);
+   //for (i=aTrack2; i<length-1; i++) {
+   //   events[i] = events[i+1];
+   //}
 
-   for (i=aTrack2; i<length-1; i++) {
-      events[i] = events[i+1];
-   }
-
-   events[length] = NULL;
-   events.resize(length-1);
+   //events[length] = NULL;
+   //events.resize(length-1);
 
    if (oldTimeState == TIME_STATE_DELTA) {
       deltaTicks();
@@ -2064,7 +2062,7 @@ void MidiFile::sortTrack(MidiEventList& trackData) {
 void MidiFile::sortTracks(void) {
    if (theTimeState == TIME_STATE_ABSOLUTE) {
       for (int i=0; i<getTrackCount(); i++) {
-         sortTrack(*events[i]);
+         sortTrack(events[i]);
       }
    }
 }
@@ -2083,7 +2081,7 @@ int MidiFile::getTrackCountAsType1(void) {
    if (getTrackState() == TRACK_STATE_JOINED) {
       int output = 0;
       int i;
-      for (i=0; i<(int)events[0]->size(); i++) {
+      for (i=0; i<(int)events[0].size(); i++) {
          if (getEvent(0,i).track > output) {
             output = getEvent(0,i).track;
          }
@@ -2191,8 +2189,8 @@ double MidiFile::getTotalTimeInSeconds(void) {
    }
    double output = 0.0;
    for (int i=0; i<(int)events.size(); i++) {
-      if (events[i]->last().seconds > output) {
-         output = events[i]->last().seconds;
+      if (events[i].last().seconds > output) {
+         output = events[i].last().seconds;
       }
    }
    return output;
@@ -2219,8 +2217,8 @@ int MidiFile::getTotalTimeInTicks(void) {
    }
    int output = 0.0;
    for (int i=0; i<(int)events.size(); i++) {
-      if (events[i]->last().tick > output) {
-         output = events[i]->last().tick;
+      if (events[i].last().tick > output) {
+         output = events[i].last().tick;
       }
    }
    return output;
@@ -2268,10 +2266,10 @@ int MidiFile::linkNotePairs(void) {
    int i;
    int sum = 0;
    for (i=0; i<getTrackCount(); i++) {
-      if (events[i] == NULL) {
-         continue;
-      }
-      sum += events[i]->linkNotePairs();
+      //if (events[i] == NULL) {
+      //   continue;
+      //}
+      sum += events[i].linkNotePairs();
    }
    m_bEventPairsLinked = true;
    return sum;
@@ -2290,10 +2288,10 @@ int MidiFile::linkEventPairs(void) {
 
 void MidiFile::clearLinks(void) {
    for (int i=0; i<getTrackCount(); i++) {
-      if (events[i] == NULL) {
-         continue;
-      }
-      events[i]->clearLinks();
+      //if (events[i] == NULL) {
+      //   continue;
+      //}
+      events[i].clearLinks();
    }
    m_bEventPairsLinked = false;
 }
@@ -2744,12 +2742,12 @@ void MidiFile::writeVLValue(long aValue, vector<uchar>& outdata) {
 
 void MidiFile::clear_no_deallocate(void) {
    for (int i=0; i<getTrackCount(); i++) {
-      events[i]->detach();
-      delete events[i];
-      events[i] = NULL;
+      events[i].detach();
+      //delete events[i];
+      //events[i] = NULL;
    }
    events.resize(1);
-   events[0] = new MidiEventList;
+   // events[0] = new MidiEventList;
    timemapvalid=0;
    timemap.clear();
    // events.resize(0);   // causes a memory leak [20150205 Jorden Thatcher]

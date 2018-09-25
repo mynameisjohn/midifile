@@ -57,8 +57,8 @@ namespace mifi
 			double seconds;
 		};
 	public:
-		using Iter = std::vector<MidiEventList *>::iterator;
-		using IterC = std::vector<MidiEventList *>::const_iterator;
+		using Iter = std::vector<MidiEventList>::iterator;
+		using IterC = std::vector<MidiEventList>::const_iterator;
 
 		MidiFile                  ( void );
 		MidiFile                  ( const char* aFile );
@@ -100,7 +100,7 @@ namespace mifi
 		Iter end() { return events.end(); }
 		IterC begin() const { return events.cbegin(); }
 		IterC end() const { return events.cend(); }
-		bool empty() const { return events.size() == 1 && events.front()->empty(); }
+        bool empty() const { return events.empty() || (events.size() == 1 && events.front().empty()); }
 
 		// join/split track functionality:
 		void      markSequence              ( void );
@@ -233,7 +233,7 @@ namespace mifi
 		static std::ostream& writeBigEndianDouble    ( std::ostream& out, double value );
 
 	protected:
-		std::vector<MidiEventList*> events;             // MIDI file events
+		std::vector<MidiEventList> events;             // MIDI file events
 		int              ticksPerQuarterNote;      // time base of file
 		int              trackCount;               // # of tracks in file
 		int              theTrackState;            // joined or split
