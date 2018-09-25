@@ -167,6 +167,9 @@ MidiFile& MidiFile::operator=( const MidiFile& other )
 
 MidiFile& MidiFile::operator=( MidiFile&& other )
 {
+    for (MidiEventList* eventList : events)
+        delete eventList;
+    events.clear ();
 	// I think moving the pointer vec preserves links
 	events = std::move( other.events );
 	m_bEventPairsLinked = other.m_bEventPairsLinked;
