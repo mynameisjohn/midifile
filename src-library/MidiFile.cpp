@@ -1914,6 +1914,23 @@ MidiEvent& MidiFile::getEvent(int aTrack, int anIndex) {
 }
 
 
+//////////////////////////////
+//
+// MidiFile::removeEventAt -- return the event at the given index in the
+//    specified track.
+//
+
+bool MidiFile::removeEventAt(int aTrack, int anIndex)
+{
+    if (aTrack < events.size())
+    {
+        return events[aTrack].removeEventAt(anIndex);
+    }
+    return false;
+}
+
+
+
 
 //////////////////////////////
 //

@@ -194,6 +194,22 @@ int MidiEventList::push_back(MidiEvent& event) {
 }
 
 
+bool MidiEventList::removeEventAt(int anIndex)
+{
+    if (list.size() <= anIndex)
+        return false;
+
+    list.erase(list.begin() + anIndex);
+    return true;
+}
+
+int MidiEventList::removeEventsAfterTick(int tick)
+{
+    list.erase(std::remove_if(list.begin(), list.end(), [tick] (const MidiEvent* e) { return tick < e->tick; }), list.end());
+    return (int) list.size();
+}
+
+
 //////////////////////////////
 //
 // MidiEventList::linkNotePairs -- Match note-ones and note-offs together

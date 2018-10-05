@@ -49,6 +49,9 @@ namespace mifi
 		int         push_back        ( MidiEvent& event );
 		int         append           ( MidiEvent& event );
 
+        bool        removeEventAt    (int anIndex);
+        int         removeEventsAfterTick (int tick);
+
 		// careful when using these, intended for internal use in MidiFile class:
 		void        detach              ( void );
 		int         push_back_no_copy   ( MidiEvent* event );

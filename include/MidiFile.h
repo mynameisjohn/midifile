@@ -215,6 +215,8 @@ namespace mifi
 		void      clear_no_deallocate       ( void );
 		MidiEvent&  getEvent                ( int aTrack, int anIndex );
 
+        bool removeEventAt                  (int aTrack, int anIndex);
+
 		// static functions:
 		static uchar    readByte                ( std::istream& input );
 		static ushort   readLittleEndian2Bytes  ( std::istream& input );
