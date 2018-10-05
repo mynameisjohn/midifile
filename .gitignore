@@ -9,3 +9,9 @@ bin
 obj
 lib
 err
+
+*.obj
+*.tlog
+*.idb
+*.pdb
+*.log
