@@ -41,6 +41,10 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
+    <AndroidMinAPI>android-23</AndroidMinAPI>
+    <AndroidTargetAPI>android-23</AndroidTargetAPI>
+    <NdkToolchainVersion>DefaultGcc</NdkToolchainVersion>
+    <AndroidStlType>gnustl_static</AndroidStlType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -58,6 +62,10 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <AndroidMinAPI>android-23</AndroidMinAPI>
+    <AndroidTargetAPI>android-23</AndroidTargetAPI>
+    <NdkToolchainVersion>DefaultGcc</NdkToolchainVersion>
+    <AndroidStlType>gnustl_static</AndroidStlType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
